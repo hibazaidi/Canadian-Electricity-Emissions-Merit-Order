@@ -8,11 +8,34 @@ This project was completed as part of ECON 366 (Energy Economics) at the Univers
 Visualized electricity generation (in TWh) by fuel source for Canada.
 
 ![National Electricity Generation](images/national_generation_by_source.png)
+---
 
+### 2. Alberta Electricity Generation by Source (1990–2023)
+Comparison of Alberta’s generation portfolio across the same period.
 
-Combines GHG inventory data, emissions projections, and generation sources for Canada and Alberta’s electricity sectors. Includes stacked area plots and a stylized merit order chart for Alberta using the scico palette. Covers years 1990–2035 with NIR 2024 and Reference scenarios.
+![Alberta Generation](images/alberta_generation_by_source.png)
 
-![image](https://github.com/user-attachments/assets/5a381f93-b46f-4b8a-8641-a29ea4e81706)
-![image](https://github.com/user-attachments/assets/3c35a70d-3a0a-468e-944b-10ff4c00d173)
-![image](https://github.com/user-attachments/assets/35249872-b995-49d3-957b-a5ef4c21683d)
-![image](https://github.com/user-attachments/assets/91b68963-fcd0-46b7-b6ad-efe962c0486e)
+---
+
+### 3. Canadian Electricity Sector GHG Emissions
+Combines 2024 National Inventory (1990–2022) and Reference Case projections (2023–2035) by province.
+
+![GHG Emissions](images/canadian_electricity_ghg_emissions.png)
+
+---
+
+### 4. Alberta Merit Order: Select Dates in January 2024
+Stacked merit order chart showing the offered generation (GW) by fuel type at hour ending 7pm, with internal load and pool price lines.
+
+![Alberta Merit Order](images/ab_merit_order_jan2024.png)
+
+---
+
+## Tools Used
+
+- **R** (tidyverse, ggplot2, cowplot, viridis, scico, lubridate)
+- **Data Sources**:
+  - Environment and Climate Change Canada
+  - Alberta Electric System Operator (AESO)
+  - Official National Inventory Reports
+
