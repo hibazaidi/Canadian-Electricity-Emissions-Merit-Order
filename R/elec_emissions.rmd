@@ -1,0 +1,327 @@
+---
+title: "Econ 366, Data Assignment 3"
+author: "Hiba Zaidi"
+editor: source
+output:
+  html_document:
+    df_print: paged
+    code_folding: hide
+---
+
+
+
+```{r chunks,echo=T,output=F, warning=FALSE,include=FALSE}
+knitr::opts_chunk$set(message=F,
+                      warning=F,
+                      include=T)
+
+options(scipen = 999)
+# include all your code, but not warnings or loading messages in your output
+```
+
+
+```{r packages-data,echo=T,output=F, warning=FALSE,include=T}
+
+library(readxl)
+library(janitor)
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(viridis)
+library(cowplot) 
+library(ggthemes)
+
+theme_ps <- function() {
+  theme_cowplot() + 
+    theme(
+      text = element_text(size = 12, color = "black"), 
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(size = 11), 
+      axis.line = element_line(color = "black", size = 0.8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom", 
+      legend.title = element_blank(),
+      legend.text = element_text(size = 11)
+    ) + 
+    theme(plot.margin = unit(c(1,1,1,1), "cm"))
+}
+```
+
+
+## Deliverable 2 
+
+```{r setup, include=TRUE, echo=TRUE}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(janitor)
+library(forcats)
+
+options(scipen = 999)  # Prevent scientific notation
+
+# Download and load the data
+input_file <- "https://data-donnees.az.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FC-Tables-Electricity-Canada-Provinces-Territories%2FEN_Annex13_Electricity_Intensity.xlsx"
+
+download.file(input_file, destfile = "deliv4.xlsx", mode = "wb")
+
+# Read and clean Canada data
+canada_raw <- read_excel("deliv4.xlsx", sheet = "Table A13-1", range = "B16:O25", col_names = FALSE) %>%
+  clean_names()
+
+# Rename columns with consistent character labels
+colnames(canada_raw) <- c("resource", "1990", "2005", "2010", "2015", "2016", "2017", "2018",
+                          "2019", "2020", "2021", "2022", "2023a", "extra")
+
+# Keep only relevant sources
+relevant_sources <- c("Coal", "Natural Gas", "Other Fuels", "Nuclear", "Hydro", 
+                      "Other Renewablesk", "Other Generationl,m")
+
+canada_data <- canada_raw %>%
+  select(-extra) %>%
+  filter(resource %in% relevant_sources) %>%
+  pivot_longer(-resource, names_to = "year", values_to = "generation") %>%
+  mutate(
+  year = as_factor(year),
+  generation = as.numeric(generation) / 1000,
+  resource = recode(resource,
+    "Other Renewablesk" = "Other Renewables",
+    "Other Generationl,m" = "Other Generation"
+  )
+)
+
+
+
+
+# Plot
+ggplot(canada_data, aes(x = year, y = generation, fill = resource)) +
+  geom_col() +
+  labs(title = "National Electricity Generation by Source",
+       x = "Year",
+       y = "Electricity Generation (TWh)",
+       fill = "Resource") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+# Read alberta data
+alberta_raw <- read_excel("deliv4.xlsx", sheet = "Table A13-10", range = "B15:O25", col_names = TRUE) %>%
+  clean_names()
+
+colnames(alberta_raw) <- c("resource", "1990", "2005", "2010", "2015", "2016", "2017", "2018",
+                           "2019", "2020", "2021", "2022", "2023a", "extra")
+
+# Convert all year columns to character (avoid type mismatch in pivot_longer)
+alberta_raw <- alberta_raw %>%
+  mutate(across(-resource, as.character))
+
+# Define relevant sources
+relevant_sources <- c("Coal", "Natural Gas", "Other Fuels", 
+                      "Nuclear", "Hydro", "Other Renewablesk", "Other Generationl,m")
+
+# Filter, reshape, and clean names
+alberta_data <- alberta_raw %>%
+  select(-extra) %>%
+  filter(resource %in% relevant_sources) %>%
+  pivot_longer(cols = -resource, names_to = "year", values_to = "generation") %>%
+  mutate(
+    year = as_factor(year),
+    generation = as.numeric(generation) / 1000,
+    resource = recode(resource,
+      "Other Renewablesk" = "Other Renewables",
+      "Other Generationl,m" = "Other Generation"
+    )
+  )
+
+# Plot
+ggplot(alberta_data, aes(x = year, y = generation, fill = resource)) +
+  geom_col() +
+  labs(title = "Electricity Generation by Source, Alberta",
+       x = "Year",
+       y = "Electricity Generation (TWh)",
+       fill = "Resource") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+
+
+```
+
+## Deliverable 3 
+
+
+```{r, deliverable_3, include=TRUE, echo=TRUE}
+
+library(ggplot2)
+library(dplyr)
+library(viridis)
+
+proj_data <- read.csv("assignment_3_projections.csv") %>%
+  clean_names() %>%
+  mutate(prov = fct_relevel(prov, "Canada", "BC", "AB", "SK", "MB", "ON", "QC", "ATL", "TERR"))
+
+# Filter & clean data
+inventory_data_filtered <- proj_data %>%
+  filter(scenario == "NIR 2024", prov != "Canada", sector == "Electricity") %>%
+  group_by(year) %>%
+  mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(total_emissions > 1e-3) %>%
+  select(-total_emissions)
+
+# Plot using viridis palette
+ggplot(inventory_data_filtered, aes(x = year, y = emissions, fill = prov)) +
+  geom_area(position = "stack", color = "black", size = 0.1) +
+  scale_fill_viridis_d(option = "plasma", name = "Province") +  # Other options: "viridis", "magma", "cividis", "inferno", "turbo"
+  labs(
+    title = "Canadian Electricity Sector GHG Emissions by Province (NIR 2024)",
+    y = expression("Annual Emissions (MtCO"[2]*"e)"),
+    x = NULL,
+    caption = "Source: Environment and Climate Change Canada"
+  ) +
+  theme_minimal()
+
+library(tidyverse)
+library(janitor)
+library(forcats)
+library(viridis)
+
+# Load and clean
+proj_data <- read.csv("assignment_3_projections.csv") %>%
+  clean_names() %>%
+  mutate(prov = fct_relevel(prov, "Canada", "BC", "AB", "SK", "MB", "ON", "QC", "ATL", "TERR"))
+
+# Choose projection scenario (match your dataset exactly)
+project_case <- "2024 Reference Case"
+
+# Create a 2022 bridge: take 2022 values from inventory and relabel to projection
+bridge_2022 <- proj_data %>%
+  filter(scenario == "NIR 2024", year == 2022, sector == "Electricity", prov != "Canada") %>%
+  mutate(scenario = project_case)
+
+# Append 2022 bridge to the original projection data
+proj_data_fixed <- bind_rows(proj_data, bridge_2022)
+
+# Plot: Combined Inventory and Projection (now using fixed data)
+ggplot() +
+  # Projection data (start at 2022 now — smooth transition!)
+  geom_area(
+    data = filter(proj_data_fixed, scenario == project_case, year >= 2022, prov != "Canada", sector == "Electricity"),
+    aes(x = year, y = emissions, fill = prov),
+    color = "black", position = "stack", alpha = 0.4, size = 0.1
+  ) +
+  # Inventory data (solid, up to 2022)
+  geom_area(
+    data = filter(proj_data_fixed, scenario == "NIR 2024", year <= 2022, prov != "Canada", sector == "Electricity"),
+    aes(x = year, y = emissions, fill = prov),
+    color = "black", position = "stack", alpha = 0.8, size = 0.1
+  ) +
+  # Divider line at 2022
+  geom_vline(xintercept = 2022, linetype = "dashed", color = "black") +
+  scale_fill_viridis_d(option = "plasma", name = "Province") +
+  labs(
+    title = "Canadian Electricity Sector GHG Emissions",
+    subtitle = "2024 National Inventory (1990–2022) and Reference Case Projections (2023–2035)",
+    y = expression("Annual Emissions (MtCO"[2]*"e)"),
+    x = NULL,
+    caption = "Source: Environment and Climate Change Canada."
+  ) +
+  theme_minimal()
+
+
+
+
+
+
+```
+
+
+## Deliverable 4
+
+```{r, deliverable_4, include=TRUE, echo=TRUE}
+library(tidyverse)
+library(scales)
+library(scico)
+
+# STEP 1: Load and clean data
+merit_order <- read_csv("merit_data.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    date = as.Date(date, format = "%m/%d/%Y"),
+    size = as.numeric(size),
+    price = as.numeric(price)
+  )
+
+# STEP 2: Filter, organize, and prepare merit data
+merit_order_filtered <- merit_order %>%
+  filter(he == 20, date != as.Date("2024-01-10")) %>%
+  group_by(date) %>%
+  arrange(price, plant_fuel) %>%
+  mutate(
+    merit = cumsum(size),
+    date_string = as_factor(format(date, "%A %B %d, %Y"))
+  ) %>%
+  ungroup()
+
+# STEP 3: Plot with lighter palette + no borders
+ggplot(merit_order_filtered) +
+  geom_rect(aes(
+    xmin = (merit - size) / 1000,
+    xmax = merit / 1000,
+    ymin = -20,
+    ymax = price,
+    fill = plant_fuel
+  ), color = NA, size = 0.4) +  # removes black border
+
+  # Internal load line (black)
+  geom_vline(data = merit_order_filtered %>% distinct(date_string, alberta_internal_load),
+             aes(xintercept = alberta_internal_load / 1000,
+                 color = "Hourly Internal Load",
+                 linetype = "Hourly Internal Load"),
+             size = 0.5) +
+
+  # Pool price line (red, dashed)
+  geom_hline(data = merit_order_filtered %>% distinct(date_string, pool_price),
+             aes(yintercept = pool_price,
+                 color = "Mid-Hour Pool Price",
+                 linetype = "Mid-Hour Pool Price"),
+             size = 0.5) +
+
+  scale_x_continuous(
+    breaks = seq(0, 14, 2), 
+    expand = c(0, 0),
+    labels = function(x) scales::comma(x)
+  ) +
+
+  scale_fill_scico_d(name = "Fuel Type", palette = "batlow", direction = -1) +
+  scale_color_manual(name = NULL,
+                     values = c("Hourly Internal Load" = "black", "Mid-Hour Pool Price" = "red")) +
+  scale_linetype_manual(name = NULL,
+                        values = c("Hourly Internal Load" = "solid", "Mid-Hour Pool Price" = "dashed")) +
+
+  labs(
+    title = "Alberta Energy Merit Order\nSelect dates in January 2024 at hour ending 7pm",
+    subtitle = "Hourly Internal Load and Mid-Hour Pool Price",
+    x = "Offered Generation (GW)",
+    y = "Price ($/MWh)"
+  ) +
+  facet_wrap(~date_string, nrow = 1) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    strip.text = element_text(size = 6),
+    legend.position = "right"
+  )
+
+
+```
+
+
+
+
