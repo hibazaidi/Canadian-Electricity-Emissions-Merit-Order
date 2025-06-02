@@ -31,7 +31,7 @@ Stacked merit order chart showing the offered generation (GW) by fuel type at ho
 
 ---
 
-## Tools Used
+## Tools & Packages Used
 
 - **R** (tidyverse, ggplot2, cowplot, viridis, scico, lubridate)
 - **Data Sources**:
