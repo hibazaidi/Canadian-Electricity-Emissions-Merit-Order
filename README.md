@@ -1,4 +1,4 @@
-# Canadian-Electricity-Emissions-And-Merit-Order
+# Canadian Electricity Emissions And Merit Order
 
 This project was completed as part of ECON 366 (Energy Economics) at the University of Alberta. It combines GHG inventory data, emissions projections, and electricity generation data for Canada and Alberta, with a special focus on data visualization and comparative analysis. It concludes with a stylized merit order chart of Alberta's power market.
 
