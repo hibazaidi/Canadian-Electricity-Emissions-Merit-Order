@@ -1,4 +1,15 @@
 # Canadian-Electricity-Emissions-Merit-Order
+
+This project was completed as part of ECON 366 (Energy Economics) at the University of Alberta. It combines GHG inventory data, emissions projections, and electricity generation data for Canada and Alberta, with a special focus on data visualization and comparative analysis. It concludes with a stylized merit order chart of Alberta's power market.
+
+## Deliverables
+
+### 1. National Electricity Generation by Source (1990–2023)
+Visualized electricity generation (in TWh) by fuel source for Canada.
+
+![National Electricity Generation](images/national_generation_by_source.png)
+
+
 Combines GHG inventory data, emissions projections, and generation sources for Canada and Alberta’s electricity sectors. Includes stacked area plots and a stylized merit order chart for Alberta using the scico palette. Covers years 1990–2035 with NIR 2024 and Reference scenarios.
 
 ![image](https://github.com/user-attachments/assets/5a381f93-b46f-4b8a-8641-a29ea4e81706)
